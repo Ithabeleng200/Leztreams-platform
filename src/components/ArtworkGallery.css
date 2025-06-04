@@ -1,0 +1,177 @@
+/* ArtworkGallery.css */
+
+.artwork-gallery {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 25px;
+  padding: 20px;
+  width: 100%;
+}
+
+.artwork-card {
+  background: #fff;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  display: flex;
+  flex-direction: column;
+}
+
+.artwork-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+}
+
+.artwork-image-container {
+  width: 100%;
+  height: 220px;
+  overflow: hidden;
+  position: relative;
+}
+
+.artwork-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.5s ease;
+}
+
+.artwork-card:hover .artwork-image {
+  transform: scale(1.05);
+}
+
+.artwork-details {
+  padding: 16px;
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.artwork-title {
+  margin: 0 0 8px 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #333;
+  line-height: 1.3;
+}
+
+.artist-name {
+  margin: 0 0 8px 0;
+  font-size: 0.9rem;
+  color: #666;
+}
+
+.artwork-description {
+  margin: 0 0 12px 0;
+  font-size: 0.9rem;
+  color: #555;
+  line-height: 1.4;
+  flex-grow: 1;
+}
+
+.artwork-pricing {
+  margin-bottom: 15px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.price {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #2a5cb8;
+}
+
+.status-badge {
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.status-badge.available {
+  background-color: #e1f5e1;
+  color: #2e7d32;
+}
+
+.status-badge.pending {
+  background-color: #fff3e0;
+  color: #e65100;
+}
+
+.status-badge.sold {
+  background-color: #ffebee;
+  color: #c62828;
+}
+
+.not-for-sale {
+  font-size: 0.9rem;
+  color: #999;
+  font-style: italic;
+}
+
+.artwork-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.add-to-cart-btn, .view-details-btn {
+  flex: 1;
+  padding: 10px;
+  border: none;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: center;
+  text-decoration: none;
+}
+
+.add-to-cart-btn {
+  background-color: #2a5cb8;
+  color: white;
+}
+
+.add-to-cart-btn:hover {
+  background-color: #1e4a9b;
+}
+
+.view-details-btn {
+  background-color: #f0f0f0;
+  color: #333;
+}
+
+.view-details-btn:hover {
+  background-color: #e0e0e0;
+}
+
+/* Empty and error states */
+.gallery-error, .empty-gallery {
+  padding: 40px 20px;
+  text-align: center;
+  color: #666;
+  font-size: 1.1rem;
+  width: 100%;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .artwork-gallery {
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 20px;
+  }
+}
+
+@media (max-width: 480px) {
+  .artwork-gallery {
+    grid-template-columns: 1fr;
+    gap: 15px;
+  }
+  
+  .artwork-image-container {
+    height: 180px;
+  }
+}

@@ -1,0 +1,38 @@
+.help, .settings {
+    max-width: 600px;
+    margin: 50px auto;
+    padding: 20px;
+    background-color: white;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  }
+  
+  .help h1, .settings h1 {
+    text-align: center;
+    margin-bottom: 20px;
+  }
+  
+  .help textarea, .settings textarea {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    font-size: 1rem;
+    margin-bottom: 20px;
+  }
+  
+  .help button, .settings button {
+    padding: 10px 20px;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    font-size: 1rem;
+    cursor: pointer;
+  }
+  
+  .help button:hover, .settings button:hover {
+    background-color: #0056b3;
+  }
+  
+  

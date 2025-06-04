@@ -1,0 +1,12 @@
+.dashboard-container {
+    padding: 30px;
+}
+.dashboard-content {
+    display: flex;
+    gap: 20px;
+}
+.dashboard-card {
+    background: white;
+    padding: 20px;
+    box-shadow: 0 5px 10px rgba(0, 0, 0, 0.2);
+}

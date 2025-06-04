@@ -1,0 +1,11 @@
+.home-container {
+    text-align: center;
+    padding: 50px;
+}
+.explore-btn {
+    background-color: green;
+    color: white;
+    padding: 10px;
+    border: none;
+    cursor: pointer;
+}

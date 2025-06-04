@@ -1,0 +1,25 @@
+.my-account-container {
+    padding: 20px;
+    max-width: 600px;
+    margin: 0 auto;
+    text-align: center;
+}
+
+.account-options {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.account-option {
+    padding: 15px 20px;
+    background-color: #007bff;
+    color: white;
+    text-decoration: none;
+    border-radius: 5px;
+    font-size: 1.2rem;
+}
+
+.account-option:hover {
+    background-color: #0056b3;
+}

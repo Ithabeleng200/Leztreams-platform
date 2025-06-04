@@ -1,0 +1,93 @@
+/* Navbar Container */
+.navbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 20px;
+    color: rgb(8, 28, 146);
+    position: relative;
+}
+
+/* Menu Bar Icon (on the left) */
+.menu-icon {
+    font-size: 24px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+}
+
+/* Main Navigation (remains in its current position) */
+.main-nav {
+    display: flex;
+    gap: 20px;
+}
+
+.main-nav a {
+    color: white;
+    text-decoration: none;
+    font-size: 1rem;
+}
+
+.main-nav a:hover {
+    text-decoration: underline;
+}
+
+/* Dropdown Menu (hidden by default) */
+.dropdown-menu {
+    display: none;
+    position: absolute;
+    top: 60px; /* Adjust based on navbar height */
+    left: 0;
+    background-color: #007bff;
+    width: 200px;
+    border-radius: 5px;
+    z-index: 1000;
+}
+
+.dropdown-menu.open {
+    display: block; /* Show when menu is open */
+}
+
+.dropdown-content {
+    padding: 10px;
+}
+
+.dropdown-item {
+    display: block;
+    color: white;
+    text-decoration: none;
+    padding: 10px 0;
+    font-size: 1rem;
+}
+
+.dropdown-item:hover {
+    background-color: #0056b3;
+}
+
+/* Nested Dropdown (for Create Account and My Account) */
+.nested-dropdown {
+    padding-left: 20px;
+}
+
+.nested-dropdown a {
+    display: block;
+    padding: 5px 0;
+    color: white;
+    text-decoration: none;
+}
+
+.nested-dropdown a:hover {
+    background-color: #0056b3;
+}
+
+/* Dropdown Button */
+.dropbtn {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 1rem;
+    cursor: pointer;
+    padding: 0;
+    width: 100%;
+    text-align: left;
+}
