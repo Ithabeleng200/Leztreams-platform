@@ -55,51 +55,53 @@ const Home = () => {
 
     const categories = ["Music", "Poetry", "Visual Arts", "Crafts"];
 
-    useEffect(() => {
-        const fetchEvents = async () => {
-            try {
-                const response = await axios.get('http://localhost:8000/api/events/');
-                // Filter out past events and sort by date
-                const now = new Date();
-                const upcomingEvents = response.data
-                    .filter(event => new Date(event.end_date) > now)
-                    .sort((a, b) => new Date(a.start_date) - new Date(b.start_date));
-                setEvents(upcomingEvents);
-            } catch (err) {
-                console.error('Error fetching events:', err);
-            }
-        };
-        const fetchArtworks = async () => {
-            try {
-                const response = await axios.get('http://localhost:8000/api/artworks/');
-                setArtworks(response.data);
-            } catch (err) {
-                console.error('Error fetching artworks:', err);
-            }
-        };
-        fetchArtworks();
-    }, []);
+useEffect(() => {
+    const fetchEvents = async () => {
+        try {
+            const response = await axios.get('http://localhost:8000/api/events/');
+            // Filter out past events and sort by date
+            const now = new Date();
+            const upcomingEvents = response.data
+                .filter(event => new Date(event.end_date) > now)
+                .sort((a, b) => new Date(a.start_date) - new Date(b.start_date));
+            setEvents(upcomingEvents || []); // Fallback to empty array
+        } catch (err) {
+            console.error('Error fetching events:', err);
+            setEvents([]); // Set to empty array on error
+        }
+    };
+    
+    fetchEvents();
+}, []);  // <-- This closes the first useEffect
 
+useEffect(() => {
+    const fetchArtworks = async () => {
+        try {
+            const response = await axios.get('http://localhost:8000/api/artworks/');
+            setArtworks(response.data);
+        } catch (err) {
+            console.error('Error fetching artworks:', err);
+        }
+    };
+    
+    fetchArtworks();
+}, []);  // <-- This closes the second useEffect
   useEffect(() => {
   const fetchFeaturedArtists = async () => {
-    try {
-      const response = await axios.get('/api/featured-artists/');
-      
-      // Group artists by category
-      const artistsByCategory = {};
-      response.data.forEach(artist => {
-        if (!artistsByCategory[artist.category]) {
-          artistsByCategory[artist.category] = [];
-        }
-        artistsByCategory[artist.category].push(artist);
-      });
-      
-      setFeaturedArtists(response.data);
-      setFeaturedArtistsByCategory(artistsByCategory);
-    } catch (error) {
-      console.error('Error fetching featured artists:', error);
-    }
-  };
+  try {
+    const response = await axios.get('http://localhost:8000/api/featured-artists/');
+    
+    // The response data is already grouped by category
+    setFeaturedArtistsByCategory(response.data);
+    
+    // Flatten the artists for other uses if needed
+    const allArtists = Object.values(response.data).flat();
+    setFeaturedArtists(allArtists);
+    
+  } catch (error) {
+    console.error('Error fetching featured artists:', error);
+  }
+};
   
   if (artworks.length > 0) {
     fetchFeaturedArtists();
@@ -588,43 +590,60 @@ const handlePlayPause = async () => {
         setShowRegistrationForm(true);
     };
 
-    const handleSubmitRegistration = async () => {
-        try {
-            const token = localStorage.getItem('token');
-            if (!token) {
-                alert('Please log in to register for events');
-                return;
-            }
+const handleSubmitRegistration = async () => {
+    try {
+        const token = localStorage.getItem('token');
+        if (!token) {
+            alert('Please log in to register for events');
+            return;
+        }
 
-            const response = await axios.post(
-                `http://localhost:8000/api/events/${registrationEvent.id}/register/`,
-                {
-                    is_participating: isParticipating,
-                    participation_details: participationDetails
-                },
-                {
-                    headers: {
-                        'Authorization': `Bearer ${token}`
-                    }
+        // For exhibition events, require participation details if participating
+        if (registrationEvent?.event_type === 'exhibition' && isParticipating && !participationDetails) {
+            alert('Please provide exhibition details');
+            return;
+        }
+
+        const response = await axios.post(
+            `http://localhost:8000/api/events/${registrationEvent.id}/register/`,
+            {
+                is_participating: isParticipating,
+                participation_details: participationDetails
+            },
+            {
+                headers: {
+                    'Authorization': `Bearer ${token}`
                 }
-            );
+            }
+        );
 
-            if (registrationEvent.ticket_price > 0) {
-                // For paid events, redirect to PayPal
+        // Check if this is a paid event
+        if (registrationEvent?.ticket_price > 0) {
+            // For paid events, redirect to PayPal
+            if (response.data.approval_url) {
                 setPaymentApprovalUrl(response.data.approval_url);
                 setCurrentRegistration(response.data.registration_id);
             } else {
-                // For free events, show success message
-                alert('Registration successful!');
-                setShowRegistrationForm(false);
-                setRegistrationEvent(null);
+                throw new Error('No approval URL received from server');
             }
-        } catch (err) {
-            console.error('Error registering for event:', err);
+        } else {
+            // For free events, show success message
+            alert('Registration successful!');
+            setShowRegistrationForm(false);
+            setRegistrationEvent(null);
+            // Refresh events to update participant count
+            const eventsResponse = await axios.get('http://localhost:8000/api/events/');
+            setEvents(eventsResponse.data);
+        }
+    } catch (err) {
+        console.error('Error registering for event:', err);
+        if (err.response && err.response.data.error) {
+            alert(err.response.data.error);
+        } else {
             alert('Failed to register for event');
         }
-    };
-
+    }
+};
     const handlePaymentSuccess = async () => {
         try {
             const token = localStorage.getItem('token');
@@ -930,9 +949,9 @@ const handlePlayPause = async () => {
     };
 
 
-const renderUpcomingEvents = () => {
-    if (events.length === 0) return null;  // Don't show section if no events
-    
+const renderUpcomingEvents = () => { 
+    if (events.length === 0) return null;
+
     return (
         <div className="upcoming-events">
             <div className="events-header">
@@ -943,17 +962,21 @@ const renderUpcomingEvents = () => {
                     </button>
                 )}
             </div>
-            
+
             <div className="events-grid">
-                {events.slice(0, 4).map(event => {  // Show only first 4 events
+                {events.slice(0, 4).map(event => {
                     const eventDate = new Date(event.start_date);
                     const day = eventDate.getDate();
-                    const month = eventDate.toLocaleString('default', { month: 'short' });
+                    const month = eventDate.toLocaleString('default', { month: 'short' }).toUpperCase();
                     const time = eventDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-                    
+
+                    // Check if exhibition slots are full
+                    const isExhibitionFull = event.event_type === 'exhibition' && 
+                                           event.max_participants && 
+                                           (event.registrations?.filter(r => r.is_participating).length || 0) >= event.max_participants;
+
                     return (
                         <div key={event.id} className="event-card">
-                            
                             <div className="event-date">
                                 <span className="day">{day}</span>
                                 <span className="month">{month}</span>
@@ -968,12 +991,37 @@ const renderUpcomingEvents = () => {
                                         : event.description}
                                 </p>
                                 <div className="event-actions">
-                                    <button 
-                                        className="event-button"
-                                        onClick={() => handleRegisterForEvent(event)}
-                                    >
-                                        {event.ticket_price > 0 ? `Buy Ticket (${event.currency}${event.ticket_price})` : 'Register Free'}
-                                    </button>
+                                    {event.event_type === 'exhibition' ? (
+                                        <>
+                                            <button 
+                                                className={`event-button ${event.ticket_price > 0 ? 'ticket-button' : 'register-button'}`}
+                                                onClick={() => handleRegisterForEvent(event)}
+                                                disabled={isExhibitionFull}
+                                            >
+                                                {event.ticket_price > 0 ? 
+                                                   `Register (M${Number(event.ticket_price).toFixed(2)})` :  
+                                                   'Register to Exhibit'}
+                                                {` (${event.registrations?.filter(r => r.is_participating).length || 0}/${event.max_participants || 0} slots)`}
+                                            </button>
+                                            <button 
+                                                className="attend-button"
+                                                onClick={() => handleRegisterForEvent(event)}
+                                            >
+                                                {event.ticket_price > 0 ? 
+                                                   `Buy Ticket (M${Number(event.ticket_price).toFixed(2)})` :  
+                                                   'Attend Free'}
+                                            </button>
+                                        </>
+                                    ) : (
+                                        <button 
+                                            className={`event-button ${event.ticket_price > 0 ? 'ticket-button' : 'register-button'}`}
+                                            onClick={() => handleRegisterForEvent(event)}
+                                        >
+                                            {event.ticket_price > 0 ? 
+                                               `Buy Ticket (M${Number(event.ticket_price).toFixed(2)})` :  
+                                               'Register Free'}
+                                        </button>
+                                    )}
                                     {isAdmin && (
                                         <div className="admin-actions">
                                             <button 
@@ -996,7 +1044,7 @@ const renderUpcomingEvents = () => {
                     );
                 })}
             </div>
-            
+
             {events.length > 4 && (
                 <button 
                     className="view-all-events"
@@ -1008,6 +1056,7 @@ const renderUpcomingEvents = () => {
         </div>
     );
 };
+// In your Home component
 const renderFeaturedArtists = () => {
   if (!featuredArtists || featuredArtists.length === 0) {
     return (
@@ -1018,12 +1067,21 @@ const renderFeaturedArtists = () => {
     );
   }
 
+  // Group artists by category
+  const artistsByCategory = {};
+  featuredArtists.forEach(artist => {
+    if (!artistsByCategory[artist.category]) {
+      artistsByCategory[artist.category] = [];
+    }
+    artistsByCategory[artist.category].push(artist);
+  });
+
   return (
     <div className="featured-artists-section">
       <h2>Featured Artists</h2>
       <p className="featured-subtitle">Discover talented artists who need your support to grow their audience</p>
       
-      {Object.entries(featuredArtistsByCategory).map(([category, artists]) => (
+      {Object.entries(artistsByCategory).map(([category, artists]) => (
         <div key={category} className="featured-category">
           <h3>{category}</h3>
           <div className="featured-artists-grid">
@@ -1040,13 +1098,20 @@ const renderFeaturedArtists = () => {
                     className="artist-avatar"
                   />
                 ) : (
-                  <div className="artist-avatar-placeholder">{artist.name.charAt(0)}</div>
+                  <div className="artist-avatar-placeholder">
+                    {artist.name.charAt(0)}
+                  </div>
                 )}
                 
                 <div className="artist-info-container">
                   <h4>{artist.name}</h4>
                   <p className="artist-views">Total Views: {artist.total_views}</p>
                   <p className="artist-artworks">Artworks: {artist.artwork_count}</p>
+                  {artist.average_rating > 0 && (
+                    <p className="artist-rating">
+                      Rating: {artist.average_rating} ({artist.total_ratings} ratings)
+                    </p>
+                  )}
                 </div>
               </div>
             ))}
@@ -1056,7 +1121,6 @@ const renderFeaturedArtists = () => {
     </div>
   );
 };
-
     const renderSearchResults = () => {
         if (!searchResults) return null;
 
@@ -1310,65 +1374,109 @@ const renderFeaturedArtists = () => {
         </div>
     );
 
-    const renderRegistrationForm = () => (
-        <div className="modal-overlay">
-            <div className="registration-form-modal">
-                <h2>Register for {registrationEvent?.title}</h2>
-                <div className="event-details">
-                    <p><strong>Date:</strong> {new Date(registrationEvent?.start_date).toLocaleDateString()}</p>
-                    <p><strong>Location:</strong> {registrationEvent?.location}</p>
-                    {registrationEvent?.ticket_price > 0 && (
-                        <p><strong>Ticket Price:</strong> {registrationEvent.ticket_price} {registrationEvent.currency}</p>
-                    )}
+const renderRegistrationForm = () => (
+    <div className="modal-overlay">
+        <div className="registration-form-modal">
+            {paymentApprovalUrl ? (
+                <div className="paypal-redirect-container">
+                    <h2>Complete Your Payment</h2>
+                    <p>You're being redirected to PayPal to complete your payment.</p>
+                    <p>If you're not redirected automatically, click the button below:</p>
+                    <button 
+                        className="paypal-button"
+                        onClick={() => window.location.href = paymentApprovalUrl}
+                    >
+                        Go to PayPal
+                    </button>
+                    <button 
+                        className="cancel-button"
+                        onClick={() => {
+                            setPaymentApprovalUrl(null);
+                            setCurrentRegistration(null);
+                        }}
+                    >
+                        Cancel Payment
+                    </button>
                 </div>
-                
-                <form onSubmit={(e) => {
-                    e.preventDefault();
-                    handleSubmitRegistration();
-                }}>
-                    {registrationEvent?.event_type === 'workshop' || 
-                     registrationEvent?.event_type === 'competition' ? (
-                        <div className="form-group">
-                            <label>
-                                <input 
-                                    type="checkbox" 
-                                    checked={isParticipating}
-                                    onChange={(e) => setIsParticipating(e.target.checked)}
-                                />
-                                I want to participate in this event
-                            </label>
-                        </div>
-                    ) : null}
-                    
-                    {isParticipating && (
-                        <div className="form-group">
-                            <label>Participation Details:</label>
-                            <textarea 
-                                value={participationDetails}
-                                onChange={(e) => setParticipationDetails(e.target.value)}
-                                placeholder="Describe what you'll be presenting or performing"
-                            />
-                        </div>
-                    )}
-                    
-                    <div className="form-actions">
-                        <button type="submit">
-                            {registrationEvent?.ticket_price > 0 ? 'Proceed to Payment' : 'Confirm Registration'}
-                        </button>
-                        <button 
-                            type="button" 
-                            onClick={() => {
-                                setShowRegistrationForm(false);
-                                setRegistrationEvent(null);
-                            }}
-                        >
-                            Cancel
-                        </button>
+            ) : (
+                <>
+                    <h2>Register for {registrationEvent?.title}</h2>
+                    <div className="event-details">
+                        <p><strong>Date:</strong> {new Date(registrationEvent?.start_date).toLocaleDateString()}</p>
+                        <p><strong>Location:</strong> {registrationEvent?.location}</p>
+                        {registrationEvent?.ticket_price > 0 && (
+                            <p><strong>Ticket Price:</strong> M{Number(registrationEvent.ticket_price).toFixed(2)}</p>
+                        )}
                     </div>
+                    
+                    <form onSubmit={(e) => {
+                        e.preventDefault();
+                        handleSubmitRegistration();
+                    }}>
+                {registrationEvent?.event_type === 'exhibition' && (
+                    <div className="form-group">
+                        <h4>Participation Type</h4>
+                        <label className="radio-label">
+                            <input 
+                                type="radio" 
+                                name="participation_type"
+                                checked={!isParticipating}
+                                onChange={() => setIsParticipating(false)}
+                            />
+                            <span className="radio-custom"></span>
+                            I want to attend as audience
+                        </label>
+                        <label className="radio-label">
+                            <input 
+                                type="radio" 
+                                name="participation_type"
+                                checked={isParticipating}
+                                onChange={() => setIsParticipating(true)}
+                            />
+                            <span className="radio-custom"></span>
+                            I want to participate as an exhibitor
+                            {registrationEvent.max_participants && (
+                                <span className="slots-remaining">
+                                    ({registrationEvent.max_participants - (registrationEvent.registrations?.filter(r => r.is_participating).length || 0)} slots remaining)
+                                </span>
+                            )}
+                        </label>
+                    </div>
+                )}
+                
+                {isParticipating && (
+                    <div className="form-group">
+                        <label>Exhibition Details:</label>
+                        <textarea 
+                            value={participationDetails}
+                            onChange={(e) => setParticipationDetails(e.target.value)}
+                            placeholder="Describe what you'll be exhibiting"
+                            required={isParticipating}
+                        />
+                    </div>
+                )}
+                
+                <div className="form-actions">
+                    <button type="submit" className="submit-btn">
+                        {registrationEvent?.ticket_price > 0 ? 'Proceed to Payment' : 'Confirm Registration'}
+                    </button>
+                    <button 
+                        type="button" 
+                        className="cancel-btn"
+                        onClick={() => {
+                            setShowRegistrationForm(false);
+                            setRegistrationEvent(null);
+                        }}
+                    >
+                        Cancel
+                    </button>
+                </div>
                 </form>
-            </div>
+                </>
+            )}
         </div>
-    );
+    </div>
+);
 
     const renderPayPalRedirect = () => (
         <div className="modal-overlay">
@@ -1844,7 +1952,7 @@ const renderFeaturedArtists = () => {
                         <div className="feedback-section">
                             <div className="feedback-tabs">
                                 <button 
-                                    className={activeFeedbackTab === 'comments' ? 'active' : ''}
+                                className={activeFeedbackTab === 'comments' ? 'active' : ''}
                                     onClick={() => setActiveFeedbackTab('comments')}
                                 >
                                     Comments ({feedbackData.comments.length})
@@ -2202,6 +2310,10 @@ const renderFeaturedArtists = () => {
             {showVisualArtsPage && <VisualArtsPage />}
             {showTraditionalCraftsPage && <TraditionalCraftsPage />}
             {showArtistProfile && renderArtistProfile()}
+            {showRegistrationForm && renderRegistrationForm()}
+            {showEventForm && renderEventForm()}
+            {paymentApprovalUrl && renderPayPalRedirect()}
+            {showEventForm && handlePaymentSuccess()}
         </div>
     );
 };

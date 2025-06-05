@@ -18,6 +18,8 @@ import Artist from './components/Artist';
 import ArtistProfile from './components/ArtistProfile';
 import PaymentSuccess from './components/PaymentSuccess';
 import PaymentCancel from './components/PaymentCancel ';
+import ArtworkPaymentSuccess from './components/ArtworkPaymentSuccess';
+import ArtworkPaymentCancel from './components/ArtworkPaymentCancel';
 import './App.css';
 
 function App() {
@@ -33,6 +35,8 @@ function App() {
         <Route path="/marketplace" element={<Marketplace />} />
         <Route path="/mentor/payment-success" element={<PaymentSuccess />} />
         <Route path="/mentor/payment-cancel" element={<PaymentCancel />} />
+        <Route path="/artwork/:artworkId/payment-success" element={<ArtworkPaymentSuccess />} />
+        <Route path="/artwork/:artworkId/payment-cancel" element={<ArtworkPaymentCancel />} />
 
         {/* Protected Routes */}
         <Route

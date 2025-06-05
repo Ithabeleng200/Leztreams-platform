@@ -11,37 +11,39 @@ const Cart = ({
   total
 }) => {
   const [isProcessing, setIsProcessing] = useState(false);
+const handleCheckout = async () => {
+  if (cartItems.length === 0) return;
 
-  const handleCheckout = async () => {
-    if (cartItems.length === 0) return;
+  setIsProcessing(true);
 
-    setIsProcessing(true);
+  try {
+    // For simplicity, we'll just process the first item in cart
+    const artwork = cartItems[0];
 
-    try {
-      // For simplicity, we'll just process the first item in cart
-      const artwork = cartItems[0];
+    const response = await axios.post(
+      `http://localhost:8000/api/artworks/${artwork.id}/create-paypal-order/`,
+      {},
+      {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          'Content-Type': 'application/json'
+        },
+        withCredentials: true
+      }
+    );
 
-      const response = await axios.post(
-        `http://localhost:8000/api/artworks/${artwork.id}/create-paypal-order/`,
-        {},
-        {
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('token')}`,
-            'Content-Type': 'application/json'
-          }
-        }
-      );
+    // Store cart items in localStorage before redirecting
+    localStorage.setItem('pendingCart', JSON.stringify(cartItems));
+    
+    // Redirect to PayPal for payment
+    window.location.href = response.data.approval_url;
 
-      // Redirect to PayPal for payment
-      window.location.href = response.data.approval_url;
-
-    } catch (error) {
-      console.error('Checkout error:', error);
-      alert('Failed to initiate checkout. Please try again.');
-      setIsProcessing(false);
-    }
-  };
-
+  } catch (error) {
+    console.error('Checkout error:', error);
+    alert('Failed to initiate checkout. Please try again.');
+    setIsProcessing(false);
+  }
+};
   if (!isOpen) return null;
 
   return (

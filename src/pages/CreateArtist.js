@@ -13,6 +13,8 @@ const CreateArtist = () => {
         profilePicture: null,
     });
 
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState('');
     const navigate = useNavigate();
 
     const handleChange = (e) => {
@@ -26,75 +28,90 @@ const CreateArtist = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        setLoading(true);
+        setError('');
+        
         try {
             const formDataToSend = new FormData();
             formDataToSend.append('name', formData.name);
             formDataToSend.append('email', formData.email);
-            formDataToSend.append('password', formData.password); // Password will be hashed on the backend
+            formDataToSend.append('password', formData.password);
             formDataToSend.append('bio', formData.bio);
             formDataToSend.append('category', formData.category);
-            formDataToSend.append('profile_picture', formData.profilePicture);
+            if (formData.profilePicture) {
+                formDataToSend.append('profile_picture', formData.profilePicture);
+            }
 
             const response = await axios.post('http://localhost:8000/api/artists/signup/', formDataToSend, {
                 headers: { 'Content-Type': 'multipart/form-data' },
             });
-            alert('Artist account created successfully!');
+            
             navigate('/artist-dashboard');
         } catch (err) {
-            console.error('Error creating artist account:', err.response?.data || err.message);
-            if (err.response?.data) {
-                console.error('Validation errors:', err.response.data);
-            }
-            alert(`Failed to create account: ${err.response?.data?.error || err.message}`);
+            setError(err.response?.data?.error || 'Failed to create account. Please try again.');
+            console.error('Error creating artist account:', err);
+        } finally {
+            setLoading(false);
         }
     };
 
     return (
         <div className="create-account-container">
             <h1>Create Artist Account</h1>
+            {error && <div className="error-message">{error}</div>}
+            
             <form onSubmit={handleSubmit} className="signup-form">
-                <label>
-                    Name:
+                <div className="form-field">
+                    <label htmlFor="name">Name *</label>
                     <input
                         type="text"
+                        id="name"
                         name="name"
                         value={formData.name}
                         onChange={handleChange}
                         required
                     />
-                </label>
-                <label>
-                    Email:
+                </div>
+
+                <div className="form-field">
+                    <label htmlFor="email">Email *</label>
                     <input
                         type="email"
+                        id="email"
                         name="email"
                         value={formData.email}
                         onChange={handleChange}
                         required
                     />
-                </label>
-                <label>
-                    Password:
+                </div>
+
+                <div className="form-field">
+                    <label htmlFor="password">Password *</label>
                     <input
                         type="password"
+                        id="password"
                         name="password"
                         value={formData.password}
                         onChange={handleChange}
                         required
                     />
-                </label>
-                <label>
-                    Bio:
+                </div>
+
+                <div className="form-field">
+                    <label htmlFor="bio">Bio *</label>
                     <textarea
+                        id="bio"
                         name="bio"
                         value={formData.bio}
                         onChange={handleChange}
                         required
                     />
-                </label>
-                <label>
-                    Category:
+                </div>
+
+                <div className="form-field">
+                    <label htmlFor="category">Category *</label>
                     <select
+                        id="category"
                         name="category"
                         value={formData.category}
                         onChange={handleChange}
@@ -106,17 +123,44 @@ const CreateArtist = () => {
                         <option value="Visual Arts">Visual Arts</option>
                         <option value="Crafts">Crafts</option>
                     </select>
-                </label>
-                <label>
-                    Profile Picture:
-                    <input
-                        type="file"
-                        name="profilePicture"
-                        onChange={handleFileChange}
-                        required
-                    />
-                </label>
-                <button type="submit">Sign Up</button>
+                </div>
+
+                <div className="form-field">
+                    <label>Profile Picture *</label>
+                    <div className="file-input-container">
+                        <div className="file-input-wrapper">
+                            <label className="file-upload-label">
+                                <input
+                                    type="file"
+                                    id="profilePicture"
+                                    name="profilePicture"
+                                    onChange={handleFileChange}
+                                    accept="image/*"
+                                    required
+                                    className="file-upload-input"
+                                />
+                                <div className="file-upload-design">
+                                    <svg className="file-upload-icon" viewBox="0 0 24 24">
+                                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6z" />
+                                        <path d="M14 2v6h6" />
+                                    </svg>
+                                    <div className="file-upload-text">
+                                        <span className="file-upload-main">Click to upload</span>
+                                        <span className="file-upload-sub">or drag and drop</span>
+                                    </div>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <button
+                    type="submit"
+                    className="submit-button"
+                    disabled={loading}
+                >
+                    {loading ? 'Creating Account...' : 'Create Account'}
+                </button>
             </form>
         </div>
     );
